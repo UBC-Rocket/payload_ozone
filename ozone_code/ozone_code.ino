@@ -6,6 +6,10 @@
  * The file will stay open for 160 s
  * This code is for testing purposes only and needs to be revamped
  */
+#include <SD.h>
+#include <SPI.h>
+
+File dataFile;
 
 // Input pins
 int temperaturePin = 18;
@@ -28,6 +32,9 @@ int LED = 5;
 int V0 = 17;
 int PM25Volt;
 
+//SD Card variables
+int ss = 10;
+
 int count = 1;
 unsigned long tic = millis();
 unsigned long toc;
@@ -45,7 +52,24 @@ void setup() {
 
   // PM25 LED pulse
   pinMode(LED, OUTPUT);
+  pinMode(ss, OUTPUT);
+
+  if(!SD.begin(ss)){
+    Serial.println("Initialization failed!");
+    return;
+    }
+Serial.println("Initialization done");
+
+dataFile = SD.open("ozone_data.txt", FILE_WRITE);
+
+if(dataFile){
+  Serial.print("File opened successfully.");
+  dataFile.println("Project Ozone Data Collection");
+  dataFile.println(" ");
+  }
 }
+
+//opens the file
 
 void loop() {
   toc = millis();
@@ -58,12 +82,19 @@ void loop() {
     delay(9.68);
     tic = millis();
 
-    if (myFile) {
-      myFile.println("T = " + temperatureVolt + "," +
-                     "NO2 = " + NO2Volt + "," +
-                     "O3 = " + O3Volt + "," +
-                     "PM25 = " + PM25 Volt);
-    }
+    if (dataFile) {
+      dataFile.println("T = ");
+      dataFile.print(temperatureVolt);
+      dataFile.print(", ");
+      dataFile.print("NO2 = ");
+      dataFile.print(NO2Volt);
+      dataFile.print(", ");
+      dataFile.print("O3 = ");
+      dataFile.print(O3Volt);
+      dataFile.print(", ");
+      dataFile.print("PM2.5 = ");
+      dataFile.print(PM25Volt);    
+      }
   }
 
   if (millis() / 8000 >= count) {
@@ -77,8 +108,10 @@ void loop() {
     count++;
   }
 
-  if (millis() >= 5400000) { // an hour and a half for the test
-    myFile.close();
+  if (toc - tic >= 5400000) { // an hour and a half for the test
+    dataFile.println(" ");
+    dataFile.println("Data collection finished");
+    dataFile.close();
     Serial.end();
   }
 }
